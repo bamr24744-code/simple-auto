@@ -164,7 +164,58 @@ function globalUpdate() {
 
             // 🔔 تنبيه الـ 5 دقائق (300,000 مللي ثانية)
             // الشرط: بين 10:00 و 9:55 + لم يُشغّل من قبل
-            if (diff <= 600000 && diff > 595000 && !is5MinWarningPlayed) {
+
+            // 🔔 تنبيه الـ 5 دقائق - نسخة ذكية (تتجدد تلقائياً كل ساعة)
+            // نستخدم وقت "الساعة والدقيقة" كمفتاح، مما يجعل التنبيه صالحاً لهذه الساعة فقط
+            const currentHourKey = 'warned_' + new Date().getHours() + ':' + Math.floor(new Date().getMinutes() / 5);
+
+            if (diff <= 300000 && diff > 295000 && localStorage.getItem(currentHourKey) !== 'true') {
+                playTripleBeep();              // تشغيل 3 بيبات
+                localStorage.setItem(currentHourKey, 'true'); // حفظ أن التنبيه عُزف لهذه الفترة
+                is5MinWarningPlayed = true;    // منع التكرار اللحظي
+
+                // تحديث نص الحالة
+                const status = document.getElementById('status');
+                if (status) {
+                    status.innerText = "⚠️ تنبيه: تبقى 5 دقائق!";
+                    status.style.color = "var(--accent-warning, #ff9800)";
+                }
+
+                // إشعار نظام
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('⏰ تنبيه الوقت', { 
+                        body: 'تبقى 5 دقائق فقط!',
+                        icon: 'image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>'
+                    });
+                }
+                console.log('🔔 تم تشغيل التنبيه (مفتاح: ' + currentHourKey + ')');
+            }
+
+
+
+
+            /*
+            // ✅ مفتاح فريد في localStorage يمنع التكرار حتى بعد تحديث الصفحة
+            const warnKey = 'warned_' + Math.floor(targetTime.getTime() / 60000);
+
+            if (diff <= 300000 && diff > 295000 && !localStorage.getItem(warnKey)) {
+                playTripleBeep();
+                localStorage.setItem(warnKey, 'true'); // حفظ حالة التنبيه
+                is5MinWarningPlayed = true;
+                updateStatus("⚠️ تنبيه: تبقى 5 دقائق!");
+            
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('⏰ تنبيه الوقت', { 
+                        body: 'تبقى 5 دقائق فقط!',
+                        icon: 'image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>'
+                    });
+                }
+                console.log('🔔 تم تشغيل التنبيه (مرة واحدة فقط لهذا العد التنازلي)');
+            } 
+        
+  */      
+        
+            /*    if (diff <= 600000 && diff > 595000 && !is5MinWarningPlayed) {
                 playTripleBeep();              // ✅ تشغيل 3 بيبات
                 is5MinWarningPlayed = true;    // منع التكرار
 
@@ -184,14 +235,18 @@ function globalUpdate() {
                 }
                 console.log('🔔 تم تشغيل تنبيه الـ 5 دقائق');
             }
+        */
         }
 
         // 🔴 انتهى المؤقت
         else {
             targetTime = null;
             is5MinWarningPlayed = false;  // إعادة الضبط
-
+ 
             // عرض العداد السلبي
+            // ✅ أضف هذا السطر هنا أيضاً (لتنظيف مفاتيح التنبيه بعد الانتهاء)
+            Object.keys(localStorage).forEach(k => k.startsWith('warned_') && localStorage.removeItem(k));
+
             if (negativeTimer) {
                 const elapsed = Math.abs(diff);
                 const mins = Math.floor(elapsed / 60000);
