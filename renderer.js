@@ -108,14 +108,6 @@ function globalUpdate() {
     
         // ⏱️ إدارة المؤقت المحلي
         manageLocalTimer(now);
-            // إشعار مرئي + نظام (يبقى كما هو)
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('⏰ تنبيه الوقت', { 
-                    body: 'تبقى 5 دقائق فقط على انتهاء المؤقت!',
-                    icon: 'image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>'
-                });
-            }
-        
         // 📅 تحديث التقويم (مرة في الدقيقة)
        
         if (now.getSeconds() === 0 || !window.firstRunDone) {
