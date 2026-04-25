@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="تطبيق بسيط للراديو، التقويم الهجري، ومواقيت الصلاة">
+    <meta name="color-scheme" content="light dark">
+    <title>📻 Simple - راديو </title>
+    
+   <!--   تم تعطيل css لوجود مشاكل لا يستجيب للازرار  -->
+   
+    <!-- ✅ تصحيح: اسم الملف styles.css (تأكد من التطابق) -->
+ <!--   <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon"> -->
+    
+<!-- 📐 ضع هذا الكود داخل <head> في index.html بدلاً من أي <link rel="stylesheet"> -->
+<style>
+:root {
+    /* 🎨 الألوان - الوضع الداكن (افتراضي) */
+    --bg-primary: #121212; --bg-secondary: #1a1a1a; --bg-tertiary: #222222;
+    --text-primary: #e9ec0e; --text-secondary: #f04dac; --text-dim: #28a7ac; --text-error: #ff6b6b;
+    --accent-gold: #91f878; --accent-green: #48f115; --accent-blue: #b1bd08; --accent-pink: #d83bbe;
+    --accent-danger: #c51481; --accent-warning: #ff9800;
+    --border-color: #333333; --border-radius: 12px; --shadow: 0 4px 10px rgba(0,0,0,0.3);
+    --trans: 0.25s ease;
+}
+
+/* 🌓 متغيرات الوضع الفاتح */
+:root[data-theme="light"], body.light-mode {
+    --bg-primary: #e6a26b; --bg-secondary: #8b4242; --bg-tertiary: #85068a;
+    --text-primary: #b6b6f1; --text-secondary: #0d6efd; --text-dim: #d8eed9; --text-error: #dc3545;
+    --accent-gold: #1dda49; --accent-green: #0fc018; --accent-blue: #0d6efd; --accent-pink: #d63384;
+    --accent-danger: #dc3545; --accent-warning: #fd7e14; --border-color: #aacdf0; --shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* 🛡️ إعادة تعيين ومنع السكرول نهائيًا */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { 
+    height: 100dvh; /* ارتفاع ديناميكي يتكيف مع شريط المتصفح في الموبايل */
+    overflow: hidden; /* يمنع ظهور شريط التمرير للصفحة */
+}
+body {
+    display: flex; flex-direction: column;
+    background: var(--bg-primary); color: var(--text-primary);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: background var(--trans), color var(--trans);
+}
+
+/* 🧭 الشريط العلوي (ثابت الارتفاع) */
+.nav-bar {
+    flex-shrink: 0; height: 65px;
+    display: flex; align-items: center; justify-content: center; gap: 1.5vmin;
+    padding: 0 2vmin; background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--trans);
+}
+.nav-bar button {
+    padding: 0 2.5vmin; height: 80%;
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-secondary); border-radius: 8px;
+    font-size: clamp(0.9rem, 2.5vmin, 1.1rem); cursor: pointer;
+    transition: all var(--trans); white-space: nowrap;
+}
+.nav-bar button:hover, .nav-bar button.active {
+    background: var(--bg-tertiary); color: var(--text-primary);
+    border-color: var(--accent-blue); transform: translateY(-1px);
+}
+
+/* 📦 منطقة المحتوى (تأخذ المساحة المتبقية فقط) */
+.content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 1.5vmin; overflow: hidden;
+}
+
+/* 🖼️ الفريمات (تملأ المساحة المتاحة دون سكرول) */
+.frame {
+    width: min(99vw, 620px); height: 80%;
+    display: none; flex-direction: column; align-items: center; justify-content: space-evenly;
+    padding: 2vmin; gap: 2.5vmin;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: var(--border-radius); box-shadow: var(--shadow);
+    transition: background var(--trans), border-color var(--trans);
+}
+.frame.active { display: flex !important; }
+
+/* 🔤 الخطوط والعناصر (مضاعفة الحجم مع تأمين عدم الخروج من الشاشة) */
+.clock-style {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: clamp(2.5rem, 9vmin, 3rem);
+    font-weight: 800; color: var(--text-primary); text-align: center; margin: 0;
+    font-variant-numeric: tabular-nums; letter-spacing: 5px;
+}
+.date-style { font-size: clamp(1.1rem, 3vmin, 1.5rem); color: var(--text-secondary); text-align: center; }
+.gold-text { color: var(--accent-gold); font-weight: 700; font-size: clamp(1.3rem, 3.5vmin, 1.7rem); text-align: center; }
+
+.info-box {
+    background: var(--bg-tertiary); border: 5px solid var(--border-color);
+    border-radius: 10px; padding: clamp(8px, 2vmin, 14px);
+    width: 100%; max-width: 460px; transition: all var(--trans);
+}
+.info-box p { font-size: clamp(1rem, 2.8vmin, 1.3rem); color: var(--text-dim); margin: 0.6vmin 0; line-height: 1.4; }
+
+#timer-setup-box {
+    display: flex; align-items: center; justify-content: center; gap: 2vmin;
+    padding: clamp(6px, 1.5vmin, 10px); background: var(--bg-tertiary);
+    border-radius: 10px; transition: background var(--trans);
+}
+#timer-input {
+    width: clamp(60px, 13vmin, 90px); padding: clamp(5px, 1.2vmin, 9px);
+    font-size: clamp(2rem, 5.5vmin, 3.2rem); font-family: 'Consolas', monospace;
+    text-align: center; background: var(--bg-primary); border: 2px solid var(--border-color);
+    color: var(--accent-pink); border-radius: 8px; transition: all var(--trans);
+}
+#timer-input:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(13,110,253,0.3); }
+
+.control-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 2vmin; width: 100%; }
+.control-bar button {
+    width: clamp(55px, 13vmin, 50px); height: clamp(35px, 13vmin, 50px);
+    border: none; border-radius: 14px; font-size: clamp(1.8rem, 4.5vmin, 1.1rem);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow); transition: transform 0.15s;
+}
+.control-bar button:hover { transform: translateY(-2px) scale(1.03); }
+.btn-danger { background: var(--accent-danger); color: #998484; }
+.btn-safe { background: var(--accent-blue); color: #462b2b; }
+.btn-disabled { background: var(--bg-tertiary); color: var(--text-dim); cursor: not-allowed; opacity: 0.7; }
+
+#radio-player {
+    width: min(92%, 340px); height: clamp(48px, 7.5vmin, 65px);
+    border-radius: 10px; filter: var(--radio-filter, invert(85%));
+    transition: filter var(--trans);
+}
+:root[data-theme="light"] #radio-player, body.light-mode #radio-player { filter: none !important; }
+
+#station-select {
+    width: min(70%, 220px); padding: clamp(8px, 1.1vmin, 7px);
+    font-size: clamp(0.5rem, 2.2vmin, 0.9rem); background: var(--bg-tertiary);
+    color: var(--text-primary); border: 0.5px solid var(--border-color);
+    border-radius: 2px; cursor: pointer; transition: all var(--trans);
+}
+#status { font-size: clamp(1rem, 2.8vmin, 1.3rem); color: var(--text-dim); text-align: center; min-height: 1.4em; }
+
+#prayer-frame { padding-top: 55px !important; }
+#country-select {
+    position: absolute; top: 75px; right: 2.5vmin;
+    width: min(170px, 40vw); padding: clamp(12px, 2vmin, 10px);
+    font-size: clamp(1.1rem, 2vmin, 1.1rem); background: var(--bg-tertiary);
+    color: var(--text-primary); border: 5px solid var(--border-color);
+    border-radius: 10px; z-index: 10; cursor: pointer;
+}
+#prayer-times { width: 100%; max-width: 420px; }
+#prayer-times > div {
+    display: flex; justify-content: space-between; padding: 1.2vmin 0;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: clamp(1.2rem, 3.8vmin, 1.8rem);
+}
+#prayer-times > div:last-child { border-bottom: none; }
+#prayer-times span:last-child { color: var(--accent-green); font-weight: 700; font-family: 'Consolas', monospace; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+</style>
+   
+    
+    <!-- تهيئة السمة لمنع الوميض -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+        })();
+    </script>
+</head>
+<body>
+
+    <!-- 🧭 شريط التنقل -->
+    <nav class="nav-bar" role="navigation">
+        <button onclick="showFrame('radio-frame')" data-action="nav-radio">📻 راديو</button>
+        <button onclick="showFrame('date-frame')" data-action="nav-date">📅 تقويم</button>
+        <button onclick="showFrame('prayer-frame')" data-action="nav-prayer">🕋 مواقيت</button>
+        <button onclick="showFrame('power-frame')" data-action="nav-power" class="active">⏰ منبه</button>
+        <button id="theme-toggle" data-action="toggle-theme">🌙 وضع ليلي</button>
+    </nav>
+
+    <main class="content" role="main">
+        
+        <!-- 📻 فريم الراديو - متعدد المحطات -->
+        <div id="radio-frame" class="frame" aria-labelledby="radio-title">
+            <h4 id="radio-title">📖 إذاعة القرآن</h4>
+
+            <!-- ✅ قائمة اختيار المحطة -->
+            <div style="width: 100%; margin: 10px 0;">
+                <label for="station-select" class="visually-hidden">اختر المحطة</label>
+                
+                <select id="station-select" style="width: 100%; max-width: 280px; padding: 8px 12px; font-size: 0.95rem; background: var(--bg-tertiary, #222); color: var(--text-primary, #e9ec0e); border: 1px solid var(--border-color, #444); border-radius: 8px; cursor: pointer; margin-bottom: 10px;">
+                    <option value="loading" disabled>🔄 جاري تحميل المحطات...</option>
+                </select>
+            </div>
+
+            <!-- مشغل الصوت -->
+            <audio id="radio-player" controls preload="none" aria-label="مشغل الراديو">
+                <source src="" type="audio/mp3">
+                متصفحك لا يدعم عنصر الصوت.
+            </audio>
+
+            <!-- معلومات المحطة الحالية -->
+            <p id="status" role="status" aria-live="polite">جاهز للتشغيل</p>
+
+            <!-- اسم المحطة الحالية -->
+            <p id="current-station" style="
+                font-size: 0.85rem; 
+                color: var(--text-secondary, #16dddd);
+                margin-top: 5px;
+                font-weight: 600;
+            "></p>
+
+            <script src="radio.js"></script>
+        </div>
+
+
+        <!-- 📅 فريم التقويم -->
+        <div id="date-frame" class="frame">
+            <h4 class="visually-hidden">التقويم</h4>
+            <div class="today-box">
+                <h2 id="gregorian-date-main" class="date-style"></h2>
+                <p id="hijri-today" class="gold-text">جاري التحميل...</p>
+            </div>
+            <div class="info-box">
+                <p id="next-month"></p>
+                <p id="moon-days"></p>
+            </div>
+        </div>
+        
+        <!-- ⚙️ فريم التحكم (الافتراضي) -->
+        <div id="power-frame" class="frame active">
+            <h4 class="visually-hidden">لوحة التحكم</h4>
+            <div class="display-area" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <div id="main-view" class="clock-style">00:00:00</div>
+                <div id="shutdown-timer-view" class="clock-style" style="display: none; color: #64c8f0;"></div>
+                <div id="negative-timer" class="clock-style" style="display: none; color: #fc9faa;"></div>
+                
+                <div id="timer-setup-box">
+                    <label for="timer-input" style="font-size: 0.8rem; color: var(--text-dim, #888);">الدقائق:</label>
+                    <input type="number" id="timer-input" value="60" min="5" max="480" readonly>
+                </div>
+                <div id="gregorian-date-control" class="date-style"></div>
+            </div>
+
+            <div class="control-bar">
+                <button onclick="changeTimer(5)" data-action="timer-up">▲</button>
+                <button onclick="changeTimer(-5)" data-action="timer-down">▼</button>
+                <button onclick="systemAction('shutdown')" data-action="shutdown" class="btn-danger" title="مؤقت محلي">⏱️</button>
+                <button onclick="systemAction('cancel')" data-action="cancel" class="btn-safe" title="إلغاء">❌</button>
+                <!--button onclick="systemAction('monitor-off')" data-action="monitor-off" class="btn-disabled" title="غير متاح" aria-disabled="false">🖥️</button-->
+            </div>
+        </div>
+
+        <!-- 🕌 فريم الصلاة -->
+        <div id="prayer-frame" class="frame">
+            <h4 style="margin: 0 0 10px 0; text-align: center; color: var(--accent-pink, #df10c3);">🕌 مواقيت الصلاة</h4>
+            
+            <!-- ✅ تم نقل القائمة خارج التموضع المطلق لتجنب التداخل -->
+            <select id="country-select" aria-label="اختر الدولة">
+                <option value="Egypt" selected>🇪🇬 مصر</option>
+                <option value="Palestine">🇵🇸 فلسطين</option>
+                <option value="Saudi Arabia">🇸🇦 السعودية</option>
+                <option value="Jordan">🇯🇴 الأردن</option>
+                <option value="UAE">🇦🇪 الإمارات</option>
+                <option value="Kuwait">🇰🇼 الكويت</option>
+                <option value="Qatar">🇶🇦 قطر</option>
+                <option value="Bahrain">🇧🇭 البحرين</option>
+                <option value="Oman">🇴🇲 عمان</option>
+                <option value="Lebanon">🇱🇧 لبنان</option>
+                <option value="Iraq">🇮🇶 العراق</option>
+                <option value="Algeria">🇩🇿 الجزائر</option>
+                <option value="Morocco">🇲🇦 المغرب</option>
+                <option value="Tunisia">🇹🇳 تونس</option>
+                <option value="Sudan">🇸🇩 السودان</option>
+            </select>
+            
+            <div id="prayer-times">
+                <div><span>الفجر:</span><span id="fajr">--:--</span></div>
+                <div><span>الظهر:</span><span id="dhuhr">--:--</span></div>
+                <div><span>العصر:</span><span id="asr">--:--</span></div>
+                <div><span>المغرب:</span><span id="maghrib">--:--</span></div>
+                <div><span>العشاء:</span><span id="isha">--:--</span></div>
+            </div>
+            
+            <div id="prayer-status"></div>
+            <div id="offline-message" style="display: none; font-size: 0.7rem; color: #ff9800; text-align: center;">
+                ⚠️ بيانات منذ <span id="days-stored">0</span> يوم
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ✅ السكربتات مرتبة ومنظّمة -->
+    <script src="main.js"></script>
+    <script src="renderer.js"></script>
+    <script src="prayer.js"></script>
+    
+    <!-- ✅ تهيئة الويب الآمنة -->
+    <script>
+        // 🛡️ Mock لـ window.api
+        if (typeof window.api === 'undefined') {
+            window.api = {
+                send: function(channel, data) {
+                    if (channel === 'system-command' && typeof systemAction === 'function') {
+                        systemAction(data?.action, data);
+                    }
+                },
+                receive: function() {}
+            };
+        }
+        
+        // 🎯 ضمان إظهار الفريم النشط بعد التحميل
+        document.addEventListener('DOMContentLoaded', function() {
+            // تحديث الفريم النشط
+            const active = document.querySelector('.frame.active');
+            if (active) {
+                active.style.display = 'flex';
+            }
+            
+            // تحديث نص زر السمة
+            const themeBtn = document.getElementById('theme-toggle');
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+            if (themeBtn) {
+                themeBtn.innerText = isDark ? '☀️ وضع نهاري' : '🌙 وضع ليلي';
+            }
+            
+            // تحديث عنوان الصفحة
+            const titles = {
+                'radio-frame': '📻 راديو ',
+                'date-frame': '📅 التقويم',
+                'prayer-frame': '🕌 مواقيت الصلاة',
+                'power-frame': '⚙️ منبه'
+            };
+            const currentFrame = document.querySelector('.frame.active')?.id;
+            if (currentFrame && titles[currentFrame]) {
+                document.title = titles[currentFrame];
+            }
+            
+            console.log('✅ العرض مُهيأ للويب');
+        });
+    </script>
+
+    <script>
+    /**
+     * 🌓 تبديل الوضع الليلي/النهاري - نسخة موحدة وموثوقة
+     */
+    function toggleTheme() {
+        const html = document.documentElement;
+        const body = document.body;
+        const btn = document.getElementById('theme-toggle');
+        const player = document.getElementById('radio-player');
+        
+        // قراءة الحالة الحالية
+        const currentTheme = html.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        // تطبيق السمة الجديدة
+        html.setAttribute('data-theme', newTheme);
+        
+        // تحديث كلاس الجسم للأنماط الإضافية
+        body.classList.remove('dark-mode', 'light-mode');
+        body.classList.add(newTheme === 'dark' ? 'dark-mode' : 'light-mode');
+        
+        // تحديث نص الزر
+        if (btn) {
+            btn.innerText = newTheme === 'dark' ? '☀️ وضع نهاري' : '🌙 وضع ليلي';
+            btn.setAttribute('aria-label', `التبديل إلى الوضع ${newTheme === 'dark' ? 'الليلي' : 'النهاري'}`);
+        }
+        
+        // تحديث فلتر الراديو (لضبط تباين المشغل)
+        if (player) {
+            player.style.filter = newTheme === 'dark' ? 'invert(90%)' : 'none';
+        }
+        
+        // حفظ التفضيل
+        localStorage.setItem('theme', newTheme);
+        
+        // إشعار داخلي للتأكيد
+        console.log(`🌓 تم التبديل إلى: ${newTheme === 'dark' ? 'الوضع الليلي 🌙' : 'الوضع النهاري ☀️'}`);
+        
+        // إرسال حدث لسماعه من المكونات الأخرى
+        document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+        
+        return true;
+    }
+
+    /**
+     * 🎨 تهيئة السمة عند التحميل - تمنع الوميض
+     */
+    function initThemeOnLoad() {
+        const html = document.documentElement;
+        const body = document.body;
+        const btn = document.getElementById('theme-toggle');
+        const player = document.getElementById('radio-player');
+        
+        // قراءة التفضيل المحفوظ أو الافتراضي
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        
+        // التطبيق الفوري
+        html.setAttribute('data-theme', savedTheme);
+        body.classList.add(savedTheme === 'dark' ? 'dark-mode' : 'light-mode');
+        
+        // تحديث نص الزر
+        if (btn) {
+            btn.innerText = savedTheme === 'dark' ? '☀️ وضع نهاري' : '🌙 وضع ليلي';
+        }
+        
+        // ضبط فلتر الراديو الأولي
+        if (player && savedTheme === 'dark') {
+            player.style.filter = 'invert(90%)';
+        }
+        
+        console.log(`✅ تم تهيئة السمة: ${savedTheme === 'dark' ? 'ليلي 🌙' : 'نهاري ☀️'}`);
+    }
+
+    /**
+     * 🔄 دالة مساعدة للتحقق من السمة الحالية
+     */
+    function getCurrentTheme() {
+        return document.documentElement.getAttribute('data-theme') || 
+               localStorage.getItem('theme') || 'dark';
+    }
+
+    // 🚀 التهيئة عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. تهيئة السمة أولاً (قبل أي تفاعل)
+        initThemeOnLoad();
+        
+        // 2. ربط زر التبديل
+        const themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+            // إزالة أي مستمع قديم لمنع التكرار
+            themeBtn.replaceWith(themeBtn.cloneNode(true));
+            const newBtn = document.getElementById('theme-toggle');
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleTheme();
+            }, { passive: true });
+        }
+        
+        // 3. دعم اختصار لوحة المفاتيح: Ctrl+D للتبديل
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+        
+        console.log('✅ نظام التبديل بين السمات جاهز');
+    });
+</script>
+
+</body>
+</html>
