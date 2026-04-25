@@ -10,6 +10,11 @@ function playTripleBeep() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContext();
+
+            // ✅ محاولة إيقاظ السياق إذا كان نائماً
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
         
         let beepCount = 0;
         const totalBeeps = 3;
@@ -434,6 +439,33 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreSavedTimer();
     globalUpdate();
     
+    /**
+     * 🎵 تفعيل نظام الصوت عند أول تفاعل (حل مشكلة سياسة المتصفح)
+     */
+    function unlockAudioContext() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            const ctx = new AudioContext();
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(() => {
+                    console.log('✅ AudioContext unlocked');
+                }).catch(e => {
+                    console.warn('⚠️ Failed to resume audio:', e);
+                });
+            }
+            // إنشاء موجة صامتة قصيرة لتهيئة النظام
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+        }
+    }
+
+    // 🚀 ربط التفعيل بأي نقرة على الصفحة (مرة واحدة فقط)
+    document.addEventListener('click', unlockAudioContext, { once: true });
+    document.addEventListener('touchstart', unlockAudioContext, { once: true });
+    document.addEventListener('keydown', unlockAudioContext, { once: true });
     document.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             systemAction(e.currentTarget.dataset.action);
