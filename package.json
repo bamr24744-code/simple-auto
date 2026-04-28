@@ -1,0 +1,100 @@
+{
+  "name": "simple-desktop",
+  "version": "1.0.0",
+  "description": "تطبيق سطح مكتب بسيط: راديو، تقويم هجري، مواقيت صلاة، ومؤقت إغلاق",
+  "author": {
+    "name": "YourName",
+    "email": "your.email@example.com"
+  },
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "npx electron-packager . --overwrite --asar --platform=win32 --arch=x64 --out=dist --ignore=\"node_modules|\\.git|\\.vscode|dist|README\" --icon=assets/icon.ico",
+    "dev": "electron . --enable-logging",
+    "build": "electron-builder --win --x64",
+    "build:portable": "electron-builder --win portable --x64",
+    "build:installer": "electron-builder --win nsis --x64",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.simple.desktop.app",
+    "productName": "Simple Desktop",
+    "copyright": "Copyright © 2024 YourName",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "renderer.js",
+      "radio.js",
+      "prayer.js",
+      "calendar.js",
+      "preload.js",
+      "index.html",
+      "styles.css",
+      "favicon.ico",
+      "assets/**/*"
+    ],
+    "exclude": [
+      "**/.vscode",
+      "**/.git",
+      "**/node_modules/.bin",
+      "**/*.md",
+      "**/README*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-v${version}-${arch}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Simple Desktop",
+      "runAfterFinish": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-v${version}.exe",
+      "requestExecutionLevel": "user"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/simple-desktop.git"
+  },
+  "keywords": [
+    "electron",
+    "radio",
+    "hijri-calendar",
+    "prayer-times",
+    "desktop-app"
+  ]
+}
