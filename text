@@ -1,9 +1,0 @@
-program file /
-
-├──index.html
-├──main.js
-├──prayer.js
-├──preload.js
-├──radio.js
-├──renderer.js
-└──style.css
